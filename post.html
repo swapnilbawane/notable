@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1a18;
+      --ink-light: #6b6b66;
+      --ink-faint: #c4c4bc;
+      --paper: #faf9f6;
+      --paper-warm: #f3f1eb;
+      --accent: #b5470a;
+      --accent-light: #f5ede6;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .top-nav {
+      padding: 1.25rem 1.5rem;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    .back-link {
+      font-size: 0.8rem;
+      color: var(--ink-light);
+      text-decoration: none;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .back-link:hover { color: var(--accent); }
+
+    .back-link::before {
+      content: '←';
+      font-size: 0.9rem;
+    }
+
+    article {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 1.5rem 5rem;
+    }
+
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .post-date {
+      font-size: 0.75rem;
+      color: var(--ink-light);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .post-tag {
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 500;
+      text-transform: lowercase;
+    }
+
+    h1.post-title {
+      font-family: 'Lora', serif;
+      font-size: 1.65rem;
+      font-weight: 400;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+      margin-bottom: 2rem;
+    }
+
+    .post-image {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      display: block;
+      max-height: 380px;
+      object-fit: cover;
+      background: var(--paper-warm);
+    }
+
+    .post-body {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: var(--ink);
+    }
+
+    .post-body p {
+      margin-bottom: 1.4rem;
+    }
+
+    .post-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .post-body em {
+      font-style: italic;
+      color: var(--ink-light);
+    }
+
+    .post-body strong {
+      font-weight: 500;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--ink-faint);
+      margin: 3rem 0;
+    }
+
+    .post-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      font-size: 0.8rem;
+      color: var(--ink-light);
+    }
+
+    .post-nav a {
+      color: var(--ink-light);
+      text-decoration: none;
+      max-width: 48%;
+    }
+
+    .post-nav a:hover { color: var(--accent); }
+    .post-nav .next { text-align: right; }
+
+    .loading {
+      padding: 3rem 0;
+      color: var(--ink-light);
+      font-size: 0.9rem;
+      font-weight: 300;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <a class="back-link" href="index.html">Notable</a>
+  </nav>
+
+  <article id="article">
+    <p class="loading">Loading…</p>
+  </article>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    function formatDate(str) {
+      const d = new Date(str);
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function renderBody(text) {
+      return text
+        .split(/\n\n+/)
+        .map(p => `<p>${p.trim().replace(/\n/g, '<br>')}</p>`)
+        .join('');
+    }
+
+    async function loadPost() {
+      if (!id) { location.href = 'index.html'; return; }
+
+      try {
+        const res = await fetch(`posts/${id}.json`);
+        if (!res.ok) throw new Error('not found');
+        const post = await res.json();
+
+        document.title = `${post.title} — Notable`;
+
+        const article = document.getElementById('article');
+        article.innerHTML = `
+          <div class="post-meta">
+            <span class="post-date">${formatDate(post.date)}</span>
+            ${post.tag ? `<span class="post-tag">${post.tag}</span>` : ''}
+          </div>
+          <h1 class="post-title">${post.title}</h1>
+          ${post.image ? `<img class="post-image" src="images/${post.image}" alt="${post.title}">` : ''}
+          <div class="post-body">${renderBody(post.body)}</div>
+          ${post.prev || post.next ? `
+            <hr class="divider">
+            <div class="post-nav">
+              ${post.prev ? `<a href="post.html?id=${post.prev.id}">← ${post.prev.title}</a>` : '<span></span>'}
+              ${post.next ? `<a class="next" href="post.html?id=${post.next.id}">${post.next.title} →</a>` : ''}
+            </div>
+          ` : ''}
+        `;
+      } catch {
+        document.getElementById('article').innerHTML =
+          '<p class="loading">Post not found.</p>';
+      }
+    }
+
+    loadPost();
+  </script>
+</body>
+</html>
